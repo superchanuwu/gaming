@@ -1,0 +1,36 @@
+name: cf workers
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE.md'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: cf
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust & wasm32 target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install worker-build
+        run: cargo install worker-build
+
+      - name: Build project
+        run: worker-build --release
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
